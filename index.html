@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ear &amp; Hand — 耳と手で覚える音楽理論</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel2: #1e222e;
+    --border: #2a2f3e;
+    --text: #d7dae3;
+    --dim: #8a90a3;
+    --accent: #5eb1ff;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --mono: "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    height: 100vh; display: flex; overflow: hidden;
+  }
+
+  /* ---- sidebar ---- */
+  #sidebar {
+    width: 260px; min-width: 260px; background: var(--panel);
+    border-right: 1px solid var(--border); overflow-y: auto; padding: 16px 0;
+    display: flex; flex-direction: column;
+  }
+  #sidebar h1 { font-size: 16px; padding: 0 16px 4px; color: var(--accent); }
+  #sidebar .sub { font-size: 11px; color: var(--dim); padding: 0 16px 12px; }
+  #progressbar { height: 6px; background: var(--panel2); border-radius: 3px; margin: 0 16px 16px; overflow: hidden; }
+  #progressbar > div { height: 100%; background: var(--green); width: 0%; transition: width .3s; }
+  .chapter { font-size: 12px; color: var(--dim); padding: 12px 16px 4px; font-weight: 600; }
+  .lesson {
+    padding: 7px 16px 7px 28px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; border-left: 3px solid transparent;
+  }
+  .lesson:hover { background: var(--panel2); }
+  .lesson.active { background: var(--panel2); border-left-color: var(--accent); }
+  .lesson .mark { width: 14px; text-align: center; color: var(--dim); }
+  .lesson.done .mark { color: var(--green); }
+  #sidefoot { margin-top: auto; padding: 12px 16px 0; font-size: 11px; color: var(--dim); }
+  #midichip {
+    display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 11px;
+    background: var(--panel2); border: 1px solid var(--border); margin-bottom: 8px;
+  }
+  #midichip.on { color: var(--green); border-color: var(--green); }
+  #resetlink { color: var(--dim); cursor: pointer; text-decoration: underline; }
+
+  /* ---- main ---- */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #desc {
+    padding: 18px 24px; overflow-y: auto; max-height: 34%;
+    border-bottom: 1px solid var(--border); background: var(--panel);
+  }
+  #desc h2 { font-size: 18px; margin-bottom: 8px; }
+  #desc p { font-size: 14px; line-height: 1.7; margin-bottom: 8px; }
+  #desc code {
+    font-family: var(--mono); font-size: 12.5px; background: var(--panel2);
+    padding: 1px 5px; border-radius: 4px; color: var(--yellow);
+  }
+  #desc pre {
+    background: var(--panel2); padding: 10px 12px; border-radius: 6px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+    margin: 8px 0; overflow-x: auto;
+  }
+  #desc .task { border-left: 3px solid var(--accent); padding-left: 10px; margin-top: 10px; }
+
+  /* ---- quiz ---- */
+  #quiz { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+  #qbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #qbar .spacer { flex: 1; }
+  #goalchip { font-size: 12px; color: var(--dim); background: var(--panel2); border: 1px solid var(--border); padding: 4px 10px; border-radius: 10px; }
+  #goalchip b { color: var(--green); }
+  #qprompt { font-size: 17px; line-height: 1.6; }
+  #qprompt .big { font-size: 22px; font-weight: 700; color: var(--accent); }
+  button {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #0b0d12; border: none; font-weight: 600; }
+  button.primary:hover { opacity: .9; }
+  button:disabled { opacity: .45; cursor: default; }
+  #choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choice { padding: 10px 16px; font-size: 14px; min-width: 92px; }
+  .choice.correct { background: var(--green); color: #0b0d12; border-color: var(--green); font-weight: 700; }
+  .choice.wrong { background: transparent; color: var(--red); border-color: var(--red); }
+  #handstate { font-size: 14px; color: var(--dim); }
+  #handstate .notes { font-family: var(--mono); font-size: 15px; color: var(--text); letter-spacing: 1px; }
+  #feedback { font-size: 14px; }
+  #feedback .ok { color: var(--green); font-weight: 600; }
+  #feedback .ng { color: var(--red); }
+  #feedback .muted { color: var(--dim); }
+  #feedback .celebrate { color: var(--green); font-weight: 700; font-size: 15px; margin-top: 6px; }
+  .hintbox {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; margin-top: 8px; font-size: 13px; line-height: 1.7;
+  }
+  .hintbox .mono { font-family: var(--mono); color: var(--yellow); }
+  .stagebox { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stage {
+    padding: 8px 14px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; background: var(--panel2); color: var(--dim);
+  }
+  .stage.now { border-color: var(--accent); color: var(--text); }
+  .stage.ok { border-color: var(--green); color: var(--green); }
+  .choice .sub { display: block; font-size: 10.5px; color: var(--dim); margin-top: 2px; font-weight: 400; }
+  .choice.correct .sub, .choice.wrong .sub { color: inherit; opacity: .8; }
+
+  /* ---- 早見表モーダル ---- */
+  #refoverlay {
+    position: fixed; inset: 0; background: rgba(5, 7, 12, .7); z-index: 10;
+    display: none; align-items: center; justify-content: center;
+  }
+  #refoverlay.open { display: flex; }
+  #refmodal {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    width: min(680px, 92vw); max-height: 84vh; overflow-y: auto; padding: 18px 20px 20px;
+  }
+  #refmodal h2 { font-size: 16px; margin-bottom: 4px; }
+  #refmodal .note { font-size: 12px; color: var(--dim); margin-bottom: 10px; }
+  #refmodal h3 { font-size: 13px; color: var(--accent); margin: 14px 0 6px; }
+  #refmodal table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  #refmodal th {
+    text-align: left; color: var(--dim); font-size: 11px; font-weight: 600;
+    padding: 4px 8px; border-bottom: 1px solid var(--border);
+  }
+  #refmodal td { padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  #refmodal td.mono { font-family: var(--mono); font-size: 12.5px; color: var(--yellow); white-space: nowrap; }
+  #refmodal td.dim { color: var(--dim); font-size: 12px; }
+  #refmodal .playbtn { padding: 3px 10px; font-size: 12px; }
+  #refclose { float: right; }
+
+  /* ---- keyboard ---- */
+  #kbwrap { border-top: 1px solid var(--border); background: var(--panel); padding: 12px 24px 14px; }
+  #kbmeta { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); margin-bottom: 8px; }
+  #keyboard { position: relative; height: 120px; user-select: none; }
+  .wkey {
+    position: absolute; top: 0; height: 100%; background: #e8eaf0;
+    border: 1px solid #10121a; border-radius: 0 0 5px 5px; cursor: pointer;
+  }
+  .wkey .lbl { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 10px; color: #555; }
+  .bkey {
+    position: absolute; top: 0; height: 60%; background: #1a1d26;
+    border: 1px solid #000; border-radius: 0 0 4px 4px; cursor: pointer; z-index: 2;
+  }
+  .wkey.lit { background: var(--accent); }
+  .bkey.lit { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div>
+    <h1>Ear &amp; Hand</h1>
+    <div class="sub">耳と手で覚える音楽理論・全12レッスン</div>
+    <div id="progressbar"><div></div></div>
+    <div id="nav"></div>
+  </div>
+  <div id="sidefoot">
+    <span id="midichip">MIDI: 確認中…</span><br>
+    <span id="resetlink">進捗をリセット</span>
+  </div>
+</nav>
+
+<div id="main">
+  <div id="desc"></div>
+  <div id="quiz">
+    <div id="qbar">
+      <button class="primary" id="btn-listen">▶ 聴く</button>
+      <button id="btn-hint">ヒント</button>
+      <button id="btn-solution">解答例</button>
+      <button id="btn-clear">やり直す</button>
+      <button id="btn-commit" style="display:none">コード確定</button>
+      <button id="btn-ref">📖 早見表</button>
+      <span class="spacer"></span>
+      <span id="goalchip"></span>
+    </div>
+    <div id="qprompt"></div>
+    <div id="stages" class="stagebox" style="display:none"></div>
+    <div id="choices"></div>
+    <div id="handstate"></div>
+    <div id="feedback"><span class="muted">レッスンを選んで始めましょう。</span></div>
+  </div>
+  <div id="kbwrap">
+    <div id="kbmeta">
+      <span>🎹 画面をクリック / PCキー: A S D F G H J K = ド〜ド（W E T Y U が黒鍵）/ MIDIキーボードもそのまま使えます</span>
+      <span id="kbrange">C3 – C5</span>
+    </div>
+    <div id="keyboard"></div>
+  </div>
+</div>
+
+<div id="refoverlay">
+  <div id="refmodal">
+    <button id="refclose">✕ 閉じる</button>
+    <h2>📖 音の早見表</h2>
+    <div class="note">名前を忘れたらいつでもここへ。▶ ですべてCから鳴らせます（見るだけでなく、鳴らして名前と響きをつなぎ直すのがコツ）。</div>
+    <div id="refbody"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================================================================
+   音楽理論コア（純粋ロジック・DOM/Audio非依存）
+   node test.js がこのブロックを抜き出してテストします
+================================================================ */
+/*THEORY-START*/
+const Theory = (() => {
+  const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+  const INTERVALS = [
+    { id: "m2", name: "短2度",  semi: 1 },
+    { id: "M2", name: "長2度",  semi: 2 },
+    { id: "m3", name: "短3度",  semi: 3 },
+    { id: "M3", name: "長3度",  semi: 4 },
+    { id: "P4", name: "完全4度", semi: 5 },
+    { id: "TT", name: "増4度（トライトーン）", semi: 6 },
+    { id: "P5", name: "完全5度", semi: 7 },
+    { id: "m6", name: "短6度",  semi: 8 },
+    { id: "M6", name: "長6度",  semi: 9 },
+    { id: "m7", name: "短7度",  semi: 10 },
+    { id: "M7", name: "長7度",  semi: 11 },
+    { id: "P8", name: "オクターブ", semi: 12 },
+  ];
+
+  const TRIADS = [
+    { id: "maj", name: "メジャー",       sym: "",    ivs: [0, 4, 7] },
+    { id: "min", name: "マイナー",       sym: "m",   ivs: [0, 3, 7] },
+    { id: "dim", name: "ディミニッシュ", sym: "dim", ivs: [0, 3, 6] },
+    { id: "aug", name: "オーギュメント", sym: "aug", ivs: [0, 4, 8] },
+  ];
+
+  const SEVENTHS = [
+    { id: "maj7", name: "メジャーセブンス",     sym: "maj7",  ivs: [0, 4, 7, 11] },
+    { id: "min7", name: "マイナーセブンス",     sym: "m7",    ivs: [0, 3, 7, 10] },
+    { id: "dom7", name: "ドミナントセブンス",   sym: "7",     ivs: [0, 4, 7, 10] },
+    { id: "m7b5", name: "ハーフディミニッシュ", sym: "m7♭5",  ivs: [0, 3, 6, 10] },
+    { id: "dim7", name: "ディミニッシュセブンス", sym: "dim7", ivs: [0, 3, 6, 9] },
+  ];
+
+  const SCALES = [
+    { id: "major",      name: "メジャー（アイオニアン）",       ivs: [0, 2, 4, 5, 7, 9, 11] },
+    { id: "minor",      name: "ナチュラルマイナー（エオリアン）", ivs: [0, 2, 3, 5, 7, 8, 10] },
+    { id: "dorian",     name: "ドリアン",         ivs: [0, 2, 3, 5, 7, 9, 10] },
+    { id: "lydian",     name: "リディアン",       ivs: [0, 2, 4, 6, 7, 9, 11] },
+    { id: "mixolydian", name: "ミクソリディアン", ivs: [0, 2, 4, 5, 7, 9, 10] },
+  ];
+
+  // コード進行（degはメジャーキーの度数、qは三和音の種類）
+  const PROGRESSIONS = [
+    { id: "251",  name: "ii–V–I",     degrees: [{ deg: 2, q: "min" }, { deg: 5, q: "maj" }, { deg: 1, q: "maj" }] },
+    { id: "1451", name: "I–IV–V–I",   degrees: [{ deg: 1, q: "maj" }, { deg: 4, q: "maj" }, { deg: 5, q: "maj" }, { deg: 1, q: "maj" }] },
+    { id: "1564", name: "I–V–vi–IV",  degrees: [{ deg: 1, q: "maj" }, { deg: 5, q: "maj" }, { deg: 6, q: "min" }, { deg: 4, q: "maj" }] },
+    { id: "1645", name: "I–vi–IV–V",  degrees: [{ deg: 1, q: "maj" }, { deg: 6, q: "min" }, { deg: 4, q: "maj" }, { deg: 5, q: "maj" }] },
+  ];
+
+  const MAJOR_IVS = [0, 2, 4, 5, 7, 9, 11];
+
+  // MIDIノート番号 → ピッチクラス（0-11、Cが0）
+  function pc(midi) { return ((midi % 12) + 12) % 12; }
+
+  // ノート配列 → ピッチクラスの集合（オクターブ・転回・重複を無視）
+  function pcSet(midis) { return new Set(midis.map(pc)); }
+
+  function setsEqual(a, b) {
+    if (a.size !== b.size) return false;
+    for (const v of a) if (!b.has(v)) return false;
+    return true;
+  }
+
+  function noteName(midi) { return NOTE_NAMES[pc(midi)]; }
+
+  // ルートのpc + 音程配列 → 構成音のpc集合
+  function chordPcs(rootPc, ivs) { return new Set(ivs.map(iv => pc(rootPc + iv))); }
+
+  // 弾いた音（MIDI番号配列）が正解の構成音と一致するか（転回・オクターブ許容）
+  function matchChord(playedMidis, rootPc, ivs) {
+    return setsEqual(pcSet(playedMidis), chordPcs(rootPc, ivs));
+  }
+
+  function triadById(id) { return TRIADS.find(t => t.id === id); }
+
+  // メジャーキー keyPc の deg 度のルートpc（deg: 1〜7）
+  function degreeRootPc(keyPc, deg) { return pc(keyPc + MAJOR_IVS[deg - 1]); }
+
+  // 進行 → コードの配列 [{rootPc, ivs, label}]
+  function progressionChords(keyPc, prog) {
+    return prog.degrees.map(d => {
+      const rootPc = degreeRootPc(keyPc, d.deg);
+      const tri = triadById(d.q);
+      return { rootPc, ivs: tri.ivs, label: NOTE_NAMES[rootPc] + tri.sym };
+    });
+  }
+
+  // 3つのpc集合が「どこかのメジャーキーの ii–V–I」なら keyPc を、違えば null を返す。
+  // 各コードは三和音でもセブンスでもOK。
+  function find251Key(sets) {
+    if (sets.length !== 3) return null;
+    for (let k = 0; k < 12; k++) {
+      const ii = degreeRootPc(k, 2), v = degreeRootPc(k, 5);
+      const okII = setsEqual(sets[0], chordPcs(ii, [0, 3, 7])) || setsEqual(sets[0], chordPcs(ii, [0, 3, 7, 10]));
+      const okV  = setsEqual(sets[1], chordPcs(v,  [0, 4, 7])) || setsEqual(sets[1], chordPcs(v,  [0, 4, 7, 10]));
+      const okI  = setsEqual(sets[2], chordPcs(k,  [0, 4, 7])) || setsEqual(sets[2], chordPcs(k,  [0, 4, 7, 11]));
+      if (okII && okV && okI) return k;
+    }
+    return null;
+  }
+
+  return {
+    NOTE_NAMES, INTERVALS, TRIADS, SEVENTHS, SCALES, PROGRESSIONS,
+    pc, pcSet, setsEqual, noteName, chordPcs, matchChord,
+    degreeRootPc, progressionChords, find251Key,
+  };
+})();
+/*THEORY-END*/
+
+const T = Theory;
+
+/* ============ オーディオ（Web Audio API・オシレータ音源） ============ */
+let actx = null, master = null;
+function audio() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    master = actx.createGain();
+    master.gain.value = 0.22;
+    master.connect(actx.destination);
+  }
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+function playNote(midi, delay = 0, dur = 0.8) {
+  const ctx = audio();
+  const t0 = ctx.currentTime + delay;
+  const freq = 440 * Math.pow(2, (midi - 69) / 12);
+  const osc = ctx.createOscillator();
+  osc.type = "triangle";
+  osc.frequency.value = freq;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.9, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  osc.connect(g); g.connect(master);
+  osc.start(t0); osc.stop(t0 + dur + 0.05);
+}
+function playChord(midis, delay = 0, dur = 1.2) {
+  for (const m of midis) playNote(m, delay, dur);
+}
+function playSeq(midis, step = 0.35, dur = 0.5) {
+  midis.forEach((m, i) => playNote(m, i * step, dur));
+}
+// ルートpc → 弾きやすい音域のMIDI番号（A/A#/Bだけ下のオクターブ）
+function rootMidiFor(rootPc) { return rootPc >= 9 ? 48 + rootPc : 60 + rootPc; }
+function chordMidis(rootPc, ivs) { const r = rootMidiFor(rootPc); return ivs.map(iv => r + iv); }
+
+/* ============ 進捗（localStorage） ============ */
+const STORE_KEY = "ear-hand-v1";
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) ?? { done: {}, weak: {} }; }
+  catch { return { done: {}, weak: {} }; }
+}
+function saveState(s) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch { /* file:// 等で失敗しても続行 */ }
+}
+let state = loadState();
+function markWeak(qkey) {
+  state = { ...state, weak: { ...state.weak, [qkey]: (state.weak[qkey] ?? 0) + 1 } };
+  saveState(state);
+}
+function easeWeak(qkey) {
+  const n = state.weak[qkey] ?? 0;
+  if (n > 0) { state = { ...state, weak: { ...state.weak, [qkey]: n - 1 } }; saveState(state); }
+}
+
+/* ============ 出題ヘルパー ============ */
+function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+// 苦手な問題（weakカウントが多い変種）ほど出やすい重み付き抽選
+function pickVariant(lessonId, variantIds, last) {
+  const pool = [];
+  for (const v of variantIds) {
+    if (v === last && variantIds.length > 1) continue;
+    const w = 1 + 3 * (state.weak[lessonId + ":" + v] ?? 0);
+    for (let i = 0; i < w; i++) pool.push(v);
+  }
+  return rnd(pool);
+}
+const WHITE_ROOTS = [0, 2, 4, 5, 7, 9]; // C D E F G A（初心者向けの弾きやすいルート）
+function nameList(pcs) { return [...pcs].sort((a, b) => a - b).map(p => T.NOTE_NAMES[p]).join(" "); }
+
+/* ============ カリキュラム ============ */
+const CHAPTERS = [
+{
+  title: "第1章 音程",
+  lessons: [
+  {
+    id: "L11", title: "耳: 基本の音程", icon: "👂", goal: 6,
+    desc: `<h2>1-1. 👂 基本の音程を聴き分ける</h2>
+<p>2つの音の距離が<b>音程（インターバル）</b>です。距離は<b>半音</b>で数えます。まずは曲の骨格になる5つから。</p>
+<pre>短3度 = 半音3つ（暗い響き）    長3度 = 半音4つ（明るい響き）
+完全4度 = 半音5つ              完全5度 = 半音7つ（澄んだ響き）
+オクターブ = 半音12（同じ名前の音）</pre>
+<p class="task"><b>課題:</b> 「▶ 聴く」で2音が順番に→同時に鳴ります。音程の名前を選んでください。先着6問正解でクリア。</p>`,
+    variants: ["m3", "M3", "P4", "P5", "P8"],
+    gen(v) { return makeIntervalEar(this, v); },
+  },
+  {
+    id: "L12", title: "耳: 全音程", icon: "👂", goal: 6,
+    desc: `<h2>1-2. 👂 全12音程を聴き分ける</h2>
+<p>残りの音程も加えて全12種。覚えるコツは「知っている曲の出だし」と結びつけること。</p>
+<pre>短2度=半音1（ジョーズ）  長2度=半音2（ハッピーバースデー）
+増4度=半音6（シンプソンズ）  短6度=半音8  長6度=半音9
+短7度=半音10  長7度=半音11（切ない浮遊感）</pre>
+<p class="task"><b>課題:</b> 全12種からランダム出題。間違えた音程はあとで多めに再出題されます（苦手つぶし）。</p>`,
+    variants: T.INTERVALS.map(i => i.id),
+    gen(v) { return makeIntervalEar(this, v); },
+  },
+  {
+    id: "L13", title: "手: 音程を弾く", icon: "🎹", goal: 5,
+    desc: `<h2>1-3. 🎹 指定の音程を弾く</h2>
+<p>今度は手で。ルート（基準の音）が鳴るので、そこから<b>指定の音程だけ上</b>の音を弾きます。</p>
+<p>鍵盤の隣どうし（黒鍵含む）が半音1つ。「短3度上」なら鍵盤を3つ右へ。<b>オクターブはどこでもOK</b>——音の名前（ピッチクラス）が合っていれば正解です。</p>
+<p class="task"><b>課題:</b> ルートの音から指定音程上の音を、画面の鍵盤かMIDIキーボードで弾いてください。</p>`,
+    variants: T.INTERVALS.filter(i => i.id !== "P8").map(i => i.id),
+    gen(v) { return makeIntervalHand(this, v); },
+  },
+]},
+{
+  title: "第2章 三和音",
+  lessons: [
+  {
+    id: "L21", title: "耳: 三和音", icon: "👂", goal: 6,
+    desc: `<h2>2-1. 👂 三和音（トライアド）を聴き分ける</h2>
+<p>ルート・3度・5度を重ねた3音のコードが<b>三和音</b>。3度と5度の組み合わせで4種類の性格が生まれます。</p>
+<pre>メジャー       = 長3度+完全5度（明るい）      例: C = ド ミ ソ
+マイナー       = 短3度+完全5度（暗い）        例: Cm = ド ミ♭ ソ
+ディミニッシュ = 短3度+減5度（不安・緊張）    例: Cdim = ド ミ♭ ソ♭
+オーギュメント = 長3度+増5度（浮遊・不思議）  例: Caug = ド ミ ソ#</pre>
+<p class="task"><b>課題:</b> 和音がジャーンと鳴ります（続けてアルペジオも）。種類を選んでください。</p>`,
+    variants: T.TRIADS.map(t => t.id),
+    gen(v) { return makeChordEar(this, v, T.TRIADS); },
+  },
+  {
+    id: "L22", title: "手: 三和音を弾く", icon: "🎹", goal: 5,
+    desc: `<h2>2-2. 🎹 三和音を弾く</h2>
+<p>コードネームを見て弾く練習。<b>転回形もOK</b>——「ド ミ ソ」でも「ミ ソ ド」でも、構成音3つが揃えば正解です。</p>
+<p>画面の鍵盤なら1音ずつクリックで大丈夫。3音たまった瞬間に自動採点されます。</p>
+<p class="task"><b>課題:</b> 指定されたコード（例: <code>Dm</code>）の構成音3つを弾いてください。</p>`,
+    variants: T.TRIADS.map(t => t.id),
+    gen(v) { return makeChordHand(this, v, T.TRIADS); },
+  },
+]},
+{
+  title: "第3章 四和音",
+  lessons: [
+  {
+    id: "L31", title: "耳: 四和音", icon: "👂", goal: 6,
+    desc: `<h2>3-1. 👂 四和音（セブンスコード）を聴き分ける</h2>
+<p>三和音に7度を足した4音コード。ジャズ・ポップスの基本語彙です。</p>
+<pre>Cmaj7  = ド ミ ソ シ   （おしゃれ・都会的）
+Cm7    = ド ミ♭ ソ シ♭ （落ち着いた哀愁）
+C7     = ド ミ ソ シ♭ （ブルージー・次へ進みたくなる）
+Cm7♭5  = ド ミ♭ ソ♭ シ♭（切ない緊張、iiに多い）
+Cdim7  = ド ミ♭ ソ♭ ラ （ミステリアス、全部短3度）</pre>
+<p class="task"><b>課題:</b> 4音の和音を聴いて種類を選んでください。</p>`,
+    variants: T.SEVENTHS.map(t => t.id),
+    gen(v) { return makeChordEar(this, v, T.SEVENTHS); },
+  },
+  {
+    id: "L32", title: "手: 四和音を弾く", icon: "🎹", goal: 5,
+    desc: `<h2>3-2. 🎹 四和音を弾く</h2>
+<p>セブンスコードを手で。まず三和音を押さえて、7度を足すイメージで。</p>
+<pre>maj7 → ルートの半音1つ下   7(dom7)・m7 → ルートの全音（半音2つ）下
+dim7 → 短3度をきれいに積むだけ</pre>
+<p class="task"><b>課題:</b> 指定されたセブンスコードの構成音4つを弾いてください（転回・オクターブ自由）。</p>`,
+    variants: T.SEVENTHS.map(t => t.id),
+    gen(v) { return makeChordHand(this, v, T.SEVENTHS); },
+  },
+]},
+{
+  title: "第4章 スケール／モード",
+  lessons: [
+  {
+    id: "L41", title: "耳: スケール", icon: "👂", goal: 6,
+    desc: `<h2>4-1. 👂 スケール／モードを聴き分ける</h2>
+<p>スケールは音の「色」。メジャーとマイナーに加え、代表的なモードを3つ。<b>3度と7度</b>に注目すると聴き分けやすいです。</p>
+<pre>メジャー           : 基準。ドレミファソラシ
+ナチュラルマイナー : 3・6・7度が♭（暗い）
+ドリアン           : マイナーだけど6度が明るい（クールな哀愁）
+リディアン         : メジャーの4度が#（浮遊感・映画音楽）
+ミクソリディアン   : メジャーの7度が♭（ロック・ブルース）</pre>
+<p class="task"><b>課題:</b> スケールが下から順に鳴ります。種類を選んでください。</p>`,
+    variants: T.SCALES.map(s => s.id),
+    gen(v) { return makeScaleEar(this, v); },
+  },
+  {
+    id: "L42", title: "手: スケールを弾く", icon: "🎹", goal: 5,
+    desc: `<h2>4-2. 🎹 スケールを弾く</h2>
+<p>指定されたスケールの構成音7つを弾きます。<b>順番は自由</b>（下から順に弾くのがおすすめ）。オクターブも自由です。</p>
+<p>迷ったら「メジャーとどこが違うか」で考えましょう。例: Dドリアン = Dメジャーの3度と7度を♭。あるいは「Cメジャーと同じ白鍵をDから」でもOK。</p>
+<p class="task"><b>課題:</b> 指定スケールの7音をすべて弾いてください。7音たまったら自動採点。</p>`,
+    variants: T.SCALES.map(s => s.id),
+    gen(v) { return makeScaleHand(this, v); },
+  },
+]},
+{
+  title: "第5章 コード進行",
+  lessons: [
+  {
+    id: "L51", title: "耳: 進行を聴き分ける", icon: "👂", goal: 6,
+    desc: `<h2>5-1. 👂 コード進行を聴き分ける</h2>
+<p>コードの<b>流れ</b>を聴く練習。個々のコードではなく「度数の動き」を聴きます。キーは毎回ランダム——移調されても同じ進行は同じに聴こえるはず。</p>
+<pre>ii–V–I    : ジャズの基本。「帰ってきた」感が強い
+I–IV–V–I  : 王道3コード。民謡からパンクまで
+I–V–vi–IV : ポップスで一番有名な進行
+I–vi–IV–V : 50年代進行（スタンド・バイ・ミー）</pre>
+<p class="task"><b>課題:</b> 進行が鳴ります。どのパターンか選んでください。</p>`,
+    variants: T.PROGRESSIONS.map(p => p.id),
+    gen(v) { return makeProgEar(this, v); },
+  },
+  {
+    id: "L52", title: "手: ii–V–I を弾く", icon: "🎹", goal: 3,
+    desc: `<h2>5-2. 🎹 指定キーで ii–V–I を弾く</h2>
+<p>ジャズの最重要進行 <b>ii–V–I</b> を弾きます。メジャースケールの2番目・5番目・1番目の音をルートにした3つのコードです。</p>
+<pre>キーC: Dm → G → C     キーF: Gm → C → F
+キーG: Am → D → G     （iiはマイナー、VとIはメジャー）</pre>
+<p class="task"><b>課題:</b> 表示されたコードを順番に弾いてください。1つ合うと次のコードへ進みます（転回自由）。</p>`,
+    variants: [0, 5, 7, 2, 10].map(String), // C F G D B♭
+    gen(v) { return makeProg251Hand(this, v); },
+  },
+  {
+    id: "L53", title: "卒業課題: 好きなキーで ii–V–I", icon: "🎓", goal: 1,
+    desc: `<h2>5-3. 🎓 卒業課題 — 好きなキーで ii–V–I</h2>
+<p>最終課題。<b>キーは指定しません。</b>あなたが選んだキーで ii–V–I を弾いてください。どのキーで弾いたかは自動で判定します。</p>
+<p>手順: ①iiのコードを弾く → 「コード確定」 ②Vを弾く → 確定 ③Iを弾く → 確定。MIDIキーボードなら、和音を押さえて<b>全部の鍵盤から手を離すと自動で確定</b>されます。</p>
+<p>三和音でもセブンス（ii m7 → V7 → I maj7）でもOK。転回・オクターブ自由。</p>
+<p class="task"><b>課題:</b> 好きなキーの ii–V–I。これができればこのドリルは卒業です！</p>`,
+    variants: ["free"],
+    gen() { return makeFree251(this); },
+  },
+]},
+];
+
+const ALL = CHAPTERS.flatMap(ch => ch.lessons);
+
+/* ============ 問題生成 ============ */
+function makeIntervalEar(lesson, v) {
+  const iv = T.INTERVALS.find(i => i.id === v);
+  const root = 50 + Math.floor(Math.random() * 13); // D3〜D4
+  return {
+    qkey: lesson.id + ":" + v, type: "ear",
+    prompt: `この2音の<span class="big">音程</span>は？`,
+    play() { playNote(root, 0, 0.7); playNote(root + iv.semi, 0.7, 0.7); playChord([root, root + iv.semi], 1.6, 1.0); },
+    choices: lesson.variants.map(id => { const d = T.INTERVALS.find(i => i.id === id); return { id, label: d.name, sub: `半音${d.semi}` }; }),
+    answer: v,
+    hint: `半音の数を数えましょう。${iv.semi <= 4 ? "かなり近い2音です。" : iv.semi <= 7 ? "中くらいの距離です。" : "だいぶ離れた2音です。"}`,
+    solText: `正解は「${iv.name}」（半音${iv.semi}個）。`,
+    solPlay() { this.play(); },
+  };
+}
+
+function makeIntervalHand(lesson, v) {
+  const iv = T.INTERVALS.find(i => i.id === v);
+  const root = 48 + Math.floor(Math.random() * 12); // C3〜B3
+  const ansPc = T.pc(root + iv.semi);
+  return {
+    qkey: lesson.id + ":" + v, type: "hand", kind: "interval",
+    prompt: `ルート <span class="big">${T.noteName(root)}</span> から <span class="big">${iv.name}</span> 上の音を弾いてください`,
+    rootMidi: root, rootPc: T.pc(root), ansPc,
+    play() { playNote(root, 0, 0.9); },
+    hint: `${iv.name}は半音${iv.semi}個。${T.noteName(root)}の鍵盤から右へ${iv.semi}個数えます（ルートを弾き直すのは自由）。`,
+    solText: `正解は「${T.NOTE_NAMES[ansPc]}」。${T.noteName(root)} + 半音${iv.semi}個です。`,
+    solPlay() { playNote(root, 0, 0.6); playNote(root + iv.semi, 0.6, 0.8); },
+  };
+}
+
+function makeChordEar(lesson, v, table) {
+  const def = table.find(t => t.id === v);
+  const rootPc = rnd(WHITE_ROOTS);
+  const midis = chordMidis(rootPc, def.ivs);
+  return {
+    qkey: lesson.id + ":" + v, type: "ear",
+    prompt: `この<span class="big">和音の種類</span>は？`,
+    play() { playChord(midis, 0, 1.4); playSeq(midis, 0.3, 0.5); },
+    choices: lesson.variants.map(id => { const d = table.find(t => t.id === id); return { id, label: d.name }; }),
+    answer: v,
+    hint: `まず明るい（長3度）か暗い（短3度）か。次に5度が澄んでいるか、濁って（±半音）いるか。`,
+    solText: `正解は「${def.name}」（${T.NOTE_NAMES[rootPc]}${def.sym}: ${nameList(T.chordPcs(rootPc, def.ivs))}）。`,
+    solPlay() { this.play(); },
+  };
+}
+
+function makeChordHand(lesson, v, table) {
+  const def = table.find(t => t.id === v);
+  const rootPc = rnd(WHITE_ROOTS);
+  const label = T.NOTE_NAMES[rootPc] + (def.sym || "");
+  const expected = T.chordPcs(rootPc, def.ivs);
+  return {
+    qkey: lesson.id + ":" + v, type: "hand", kind: "set",
+    prompt: `<span class="big">${label}</span>（${def.name}）を弾いてください`,
+    expected, needed: expected.size,
+    hint: `ルート${T.NOTE_NAMES[rootPc]}から半音で ${def.ivs.join(" - ")} の位置。構成音: 音名を知りたければ「解答例」へ。`,
+    solText: `${label} の構成音は「${nameList(expected)}」。`,
+    solPlay() { playChord(chordMidis(rootPc, def.ivs), 0, 1.2); },
+  };
+}
+
+function makeScaleEar(lesson, v) {
+  const def = T.SCALES.find(s => s.id === v);
+  const rootPc = rnd(WHITE_ROOTS);
+  const r = rootMidiFor(rootPc);
+  const midis = [...def.ivs.map(iv => r + iv), r + 12];
+  return {
+    qkey: lesson.id + ":" + v, type: "ear",
+    prompt: `この<span class="big">スケール</span>は？`,
+    play() { playSeq(midis, 0.32, 0.5); },
+    choices: lesson.variants.map(id => { const d = T.SCALES.find(s => s.id === id); return { id, label: d.name }; }),
+    answer: v,
+    hint: `3度（明るい/暗い）→ 7度（高い/低い）→ 4度・6度の順にチェック。`,
+    solText: `正解は「${def.name}」（${T.NOTE_NAMES[rootPc]}から: ${nameList(T.chordPcs(rootPc, def.ivs))}）。`,
+    solPlay() { this.play(); },
+  };
+}
+
+function makeScaleHand(lesson, v) {
+  const def = T.SCALES.find(s => s.id === v);
+  const rootPc = rnd([0, 2, 5, 7]); // C D F G
+  const expected = T.chordPcs(rootPc, def.ivs);
+  return {
+    qkey: lesson.id + ":" + v, type: "hand", kind: "set",
+    prompt: `<span class="big">${T.NOTE_NAMES[rootPc]} ${def.name}</span> の7音を弾いてください（順番自由）`,
+    expected, needed: 7,
+    hint: `ルートから半音で ${def.ivs.join(" - ")}。間違えて押しても、7音たまるまでは採点されません…ではなく即たまるので慎重に！`,
+    solText: `構成音は「${nameList(expected)}」。`,
+    solPlay() { const r = rootMidiFor(rootPc); playSeq([...def.ivs.map(iv => r + iv), r + 12], 0.3, 0.5); },
+  };
+}
+
+function makeProgEar(lesson, v) {
+  const prog = T.PROGRESSIONS.find(p => p.id === v);
+  const keyPc = Math.floor(Math.random() * 12);
+  const chords = T.progressionChords(keyPc, prog);
+  return {
+    qkey: lesson.id + ":" + v, type: "ear",
+    prompt: `この<span class="big">コード進行</span>は？（キーはランダム）`,
+    play() { chords.forEach((c, i) => playChord(chordMidis(c.rootPc, c.ivs), i * 1.0, 1.0)); },
+    choices: lesson.variants.map(id => { const d = T.PROGRESSIONS.find(p => p.id === id); return { id, label: d.name }; }),
+    answer: v,
+    hint: `最初のコードが「主役（I）」に聴こえるか、それとも「途中から始まった」感じか。最後に着地するかも重要。`,
+    solText: `正解は「${prog.name}」。このキー（${T.NOTE_NAMES[keyPc]}）では ${chords.map(c => c.label).join(" → ")} でした。`,
+    solPlay() { this.play(); },
+  };
+}
+
+function makeProg251Hand(lesson, v) {
+  const keyPc = Number(v);
+  const prog = T.PROGRESSIONS.find(p => p.id === "251");
+  const chords = T.progressionChords(keyPc, prog);
+  return {
+    qkey: lesson.id + ":" + v, type: "hand", kind: "stages",
+    prompt: `キー <span class="big">${T.NOTE_NAMES[keyPc]}</span> の <span class="big">ii–V–I</span> を順番に弾いてください`,
+    stages: chords.map((c, i) => ({
+      label: ["ii", "V", "I"][i] + " = " + c.label,
+      expected: T.chordPcs(c.rootPc, c.ivs),
+    })),
+    hint: `${T.NOTE_NAMES[keyPc]}メジャースケールの 2番目・5番目・1番目 の音がルート。iiだけマイナーです。`,
+    solText: `${chords.map(c => c.label).join(" → ")}（構成音: ${chords.map(c => nameList(T.chordPcs(c.rootPc, c.ivs))).join(" / ")}）。`,
+    solPlay() { chords.forEach((c, i) => playChord(chordMidis(c.rootPc, c.ivs), i * 1.0, 1.0)); },
+  };
+}
+
+function makeFree251(lesson) {
+  return {
+    qkey: lesson.id + ":free", type: "hand", kind: "free251",
+    prompt: `<span class="big">好きなキー</span>で <span class="big">ii–V–I</span> を弾いてください（コードごとに確定）`,
+    committed: [],
+    hint: `例: キーCなら Dm → G → C。まずキーを決めて、メジャースケールの2・5・1番目をルートにコードを作ります。`,
+    solText: `どのキーでもOK。例: Dm→G→C（キーC）、Gm→C→F（キーF）、Em7→A7→Dmaj7（キーD）。`,
+    solPlay() {
+      const chords = T.progressionChords(0, T.PROGRESSIONS.find(p => p.id === "251"));
+      chords.forEach((c, i) => playChord(chordMidis(c.rootPc, c.ivs), i * 1.0, 1.0));
+    },
+  };
+}
+
+/* ============ セッション（レッスン進行）管理 ============ */
+let session = null; // { lesson, correct, attempted, q, lastVariant, pendingRetry, sinceMiss, judging }
+let qToken = 0;
+
+const $nav = document.getElementById("nav");
+const $desc = document.getElementById("desc");
+const $prompt = document.getElementById("qprompt");
+const $choices = document.getElementById("choices");
+const $handstate = document.getElementById("handstate");
+const $feedback = document.getElementById("feedback");
+const $stages = document.getElementById("stages");
+const $goal = document.getElementById("goalchip");
+const $bar = document.querySelector("#progressbar > div");
+const $btnListen = document.getElementById("btn-listen");
+const $btnClear = document.getElementById("btn-clear");
+const $btnCommit = document.getElementById("btn-commit");
+
+function renderNav() {
+  $nav.textContent = "";
+  for (const ch of CHAPTERS) {
+    const h = document.createElement("div");
+    h.className = "chapter";
+    h.textContent = ch.title;
+    $nav.append(h);
+    for (const l of ch.lessons) {
+      const el = document.createElement("div");
+      el.className = "lesson" + (session?.lesson === l ? " active" : "") + (state.done[l.id] ? " done" : "");
+      const mark = document.createElement("span");
+      mark.className = "mark";
+      mark.textContent = state.done[l.id] ? "✓" : "○";
+      const label = document.createElement("span");
+      label.textContent = l.icon + " " + l.title;
+      el.append(mark, label);
+      el.addEventListener("click", () => startLesson(l));
+      $nav.append(el);
+    }
+  }
+  const doneCount = ALL.filter(l => state.done[l.id]).length;
+  $bar.style.width = `${Math.round(doneCount / ALL.length * 100)}%`;
+}
+
+function startLesson(lesson) {
+  session = { lesson, correct: 0, attempted: false, q: null, lastVariant: null, pendingRetry: [], sinceMiss: 0, judging: false, input: null };
+  $desc.innerHTML = lesson.desc;
+  renderNav();
+  nextQuestion();
+}
+
+function nextQuestion() {
+  const s = session;
+  const lesson = s.lesson;
+  qToken++;
+  // 苦手（ミスした）問題を2問おきに優先再出題する軽いSRS
+  let variant;
+  if (s.pendingRetry.length && s.sinceMiss >= 2) {
+    variant = s.pendingRetry.shift();
+    s.sinceMiss = 0;
+  } else {
+    variant = pickVariant(lesson.id, lesson.variants, s.lastVariant);
+    s.sinceMiss++;
+  }
+  s.lastVariant = variant;
+  s.q = lesson.gen(variant);
+  s.attempted = false;
+  s.judging = false;
+  s.input = { pcs: new Set(), names: [], stageIdx: 0, held: new Set(), curPcs: new Set(), curNames: [] };
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = session.q;
+  $prompt.innerHTML = q.prompt;
+  $feedback.innerHTML = "";
+  $choices.textContent = "";
+  $handstate.textContent = "";
+  $stages.style.display = "none";
+  $btnCommit.style.display = q.kind === "free251" ? "" : "none";
+  $btnListen.textContent = q.type === "ear" ? "▶ 聴く" : (q.kind === "interval" ? "▶ ルートを聴く" : "▶ 聴く");
+  $btnListen.style.display = (q.type === "ear" || q.kind === "interval") ? "" : "none";
+  $btnClear.style.display = q.type === "hand" ? "" : "none";
+  updateGoal();
+
+  if (q.type === "ear") {
+    for (const c of q.choices) {
+      const btn = document.createElement("button");
+      btn.className = "choice";
+      btn.textContent = c.label;
+      if (c.sub) {
+        const sub = document.createElement("span");
+        sub.className = "sub";
+        sub.textContent = c.sub;
+        btn.append(sub);
+      }
+      btn.addEventListener("click", () => answerEar(c.id, btn));
+      $choices.append(btn);
+    }
+    if (actx && actx.state === "running") q.play();
+    else setFeedback(`<span class="muted">「▶ 聴く」を押して出題音を再生してください。</span>`);
+  } else {
+    renderHandState();
+    if (q.kind === "interval" && actx && actx.state === "running") q.play();
+    if (q.kind === "stages") renderStages();
+    if (q.kind === "free251") renderFreeStages();
+  }
+}
+
+function updateGoal() {
+  const s = session;
+  $goal.innerHTML = `クリアまで <b>${s.correct}</b> / ${s.lesson.goal} 問`;
+}
+
+function setFeedback(html) { $feedback.innerHTML = html; }
+function appendFeedback(el) { $feedback.append(el); }
+
+/* ---- 耳の採点 ---- */
+function answerEar(id, btn) {
+  const s = session, q = s.q;
+  if (s.judging) return;
+  if (id === q.answer) {
+    btn.classList.add("correct");
+    onCorrect();
+  } else {
+    btn.classList.add("wrong");
+    btn.disabled = true;
+    onWrong(`<span class="ng">✗ ちがいます。もう一度聴いて選び直してください。</span>`);
+  }
+}
+
+/* ---- 手の採点 ---- */
+function renderHandState() {
+  const q = session.q, inp = session.input;
+  if (q.kind === "interval") {
+    $handstate.innerHTML = `ルート ${T.noteName(q.rootMidi)} が鳴っています。答えの音を1つ弾いてください（ルートの弾き直しは自由）`;
+  } else if (q.kind === "set") {
+    $handstate.innerHTML = `弾いた音: <span class="notes">${inp.names.join(" ") || "—"}</span>（${inp.pcs.size} / ${q.needed}音そろうと採点）`;
+  } else if (q.kind === "stages") {
+    $handstate.innerHTML = `弾いた音: <span class="notes">${inp.names.join(" ") || "—"}</span>`;
+  } else if (q.kind === "free251") {
+    $handstate.innerHTML = `いま押さえている/ためた音: <span class="notes">${inp.curNames.join(" ") || "—"}</span>（3音以上で「コード確定」／MIDIは全部離すと自動確定）`;
+  }
+}
+
+function renderStages() {
+  const q = session.q, inp = session.input;
+  $stages.style.display = "";
+  $stages.textContent = "";
+  q.stages.forEach((st, i) => {
+    const d = document.createElement("div");
+    d.className = "stage" + (i < inp.stageIdx ? " ok" : i === inp.stageIdx ? " now" : "");
+    d.textContent = (i < inp.stageIdx ? "✓ " : "") + st.label;
+    $stages.append(d);
+  });
+}
+
+function renderFreeStages() {
+  const q = session.q;
+  $stages.style.display = "";
+  $stages.textContent = "";
+  ["ii", "V", "I"].forEach((name, i) => {
+    const d = document.createElement("div");
+    d.className = "stage" + (i < q.committed.length ? " ok" : i === q.committed.length ? " now" : "");
+    d.textContent = (i < q.committed.length ? `✓ ${name}: ${nameList(q.committed[i])}` : `${i + 1}. ${name} のコード`);
+    $stages.append(d);
+  });
+}
+
+function handleHandNote(midi) {
+  const s = session;
+  if (!s || !s.q || s.q.type !== "hand" || s.judging) return;
+  const q = s.q, inp = s.input, p = T.pc(midi);
+
+  if (q.kind === "interval") {
+    if (p === q.rootPc && p !== q.ansPc) return; // ルートの弾き直しはノーカウント
+    judge(p === q.ansPc, `<span class="ng">✗ ${T.NOTE_NAMES[p]} はちがいます。ルートから半音の数を数え直してみましょう。</span>`);
+    return;
+  }
+  if (q.kind === "set") {
+    if (!inp.pcs.has(p)) { inp.pcs.add(p); inp.names.push(T.NOTE_NAMES[p]); }
+    renderHandState();
+    if (inp.pcs.size >= q.needed) {
+      judge(T.setsEqual(inp.pcs, q.expected),
+        `<span class="ng">✗ 「${inp.names.join(" ")}」はちがいます。入力はリセットしたので、もう一度どうぞ。</span>`);
+      if (!s.lastJudgeOk) resetHandInput();
+    }
+    return;
+  }
+  if (q.kind === "stages") {
+    if (!inp.pcs.has(p)) { inp.pcs.add(p); inp.names.push(T.NOTE_NAMES[p]); }
+    renderHandState();
+    const target = q.stages[inp.stageIdx].expected;
+    if (inp.pcs.size >= target.size) {
+      if (T.setsEqual(inp.pcs, target)) {
+        inp.stageIdx++;
+        inp.pcs = new Set(); inp.names = [];
+        if (inp.stageIdx >= q.stages.length) { renderStages(); onCorrect(); }
+        else {
+          renderStages(); renderHandState();
+          setFeedback(`<span class="ok">✓ その調子！ 次: ${q.stages[inp.stageIdx].label}</span>`);
+        }
+      } else {
+        judge(false, `<span class="ng">✗ 「${inp.names.join(" ")}」はちがいます。${q.stages[inp.stageIdx].label} をもう一度。</span>`);
+        inp.pcs = new Set(); inp.names = [];
+        renderHandState();
+      }
+    }
+    return;
+  }
+  if (q.kind === "free251") {
+    inp.curPcs.add(p);
+    if (!inp.curNames.includes(T.NOTE_NAMES[p])) inp.curNames.push(T.NOTE_NAMES[p]);
+    renderHandState();
+  }
+}
+
+// MIDIのノートオフ（卒業課題の自動確定用）
+let releaseTimer = null;
+function handleMidiOff(midi) {
+  const s = session;
+  if (!s?.input) return;
+  s.input.held.delete(midi);
+  if (s.q?.kind === "free251" && s.input.held.size === 0 && s.input.curPcs.size >= 3) {
+    clearTimeout(releaseTimer);
+    releaseTimer = setTimeout(commitChord, 180);
+  }
+}
+
+function commitChord() {
+  const s = session, q = s?.q;
+  if (!q || q.kind !== "free251" || s.judging) return;
+  const inp = s.input;
+  if (inp.curPcs.size < 3) {
+    setFeedback(`<span class="muted">3音以上弾いてから確定してください。</span>`);
+    return;
+  }
+  q.committed.push(new Set(inp.curPcs));
+  inp.curPcs = new Set(); inp.curNames = [];
+  renderFreeStages(); renderHandState();
+  if (q.committed.length === 3) {
+    const key = T.find251Key(q.committed);
+    if (key !== null) {
+      setFeedback("");
+      onCorrect(`🎓 <b>${T.NOTE_NAMES[key]}メジャーキーの ii–V–I！</b> 卒業おめでとうございます！`);
+    } else {
+      q.committed = [];
+      renderFreeStages();
+      onWrong(`<span class="ng">✗ ii–V–I になっていませんでした。3つのコードをリセットしたので、もう一度。ヒントも見てみましょう。</span>`);
+    }
+  } else {
+    setFeedback(`<span class="ok">✓ コード${q.committed.length}を確定。次のコードへ！</span>`);
+  }
+}
+
+function resetHandInput() {
+  const s = session;
+  if (!s?.input) return;
+  s.input.pcs = new Set(); s.input.names = [];
+  s.input.curPcs = new Set(); s.input.curNames = [];
+  if (s.q?.kind === "free251") { s.q.committed = []; renderFreeStages(); }
+  if (s.q?.kind === "stages") renderStages();
+  renderHandState();
+}
+
+/* ---- 共通の正誤処理 ---- */
+function judge(ok, ngHtml) {
+  session.lastJudgeOk = ok;
+  if (ok) onCorrect();
+  else onWrong(ngHtml);
+}
+
+function onWrong(html) {
+  const s = session;
+  setFeedback(html);
+  if (!s.attempted) {
+    s.attempted = true;
+    markWeak(s.q.qkey);
+    if (!s.pendingRetry.includes(s.q.qkey.split(":").slice(1).join(":"))) {
+      s.pendingRetry.push(s.q.qkey.split(":").slice(1).join(":"));
+    }
+    s.sinceMiss = 0;
+  }
+}
+
+function onCorrect(customHtml) {
+  const s = session;
+  s.judging = true;
+  const firstTry = !s.attempted;
+  if (firstTry) { s.correct++; easeWeak(s.q.qkey); }
+  updateGoal();
+  const token = qToken;
+
+  let html = customHtml
+    ? `<span class="ok">${customHtml}</span>`
+    : `<span class="ok">✓ 正解！</span>` + (firstTry ? "" : ` <span class="muted">（一発正解でカウントされます。この問題はまた出ます）</span>`);
+  setFeedback(html);
+
+  if (s.correct >= s.lesson.goal) {
+    state = { ...state, done: { ...state.done, [s.lesson.id]: true } };
+    saveState(state);
+    renderNav();
+    const d = document.createElement("div");
+    d.className = "celebrate";
+    const idx = ALL.indexOf(s.lesson);
+    const next = ALL.slice(idx + 1).find(l => !state.done[l.id]) ?? ALL.find(l => !state.done[l.id]);
+    d.textContent = next ? `🎉 レッスンクリア！` : "🏆 全レッスンクリア！おめでとうございます！";
+    appendFeedback(d);
+    if (next) {
+      const btn = document.createElement("button");
+      btn.className = "primary";
+      btn.style.marginTop = "8px";
+      btn.textContent = `次のレッスン「${next.icon} ${next.title}」へ →`;
+      btn.addEventListener("click", () => startLesson(next));
+      appendFeedback(btn);
+    }
+  } else {
+    setTimeout(() => { if (token === qToken && session === s) nextQuestion(); }, 1200);
+  }
+}
+
+/* ---- ヒント・解答例 ---- */
+document.getElementById("btn-hint").addEventListener("click", () => {
+  const q = session?.q; if (!q) return;
+  const box = document.createElement("div");
+  box.className = "hintbox";
+  box.textContent = "💡 " + q.hint;
+  appendFeedback(box);
+});
+document.getElementById("btn-solution").addEventListener("click", () => {
+  const s = session, q = s?.q; if (!q) return;
+  if (!s.attempted) { s.attempted = true; } // 解答例を見たら一発正解扱いにしない
+  const box = document.createElement("div");
+  box.className = "hintbox";
+  const label = document.createElement("div");
+  label.innerHTML = `📖 <span class="mono">${q.solText}</span>`;
+  const play = document.createElement("button");
+  play.textContent = "▶ お手本を聴く";
+  play.style.marginTop = "6px";
+  play.addEventListener("click", () => q.solPlay());
+  box.append(label, play);
+  appendFeedback(box);
+});
+$btnListen.addEventListener("click", () => { audio(); session?.q?.play?.(); });
+$btnClear.addEventListener("click", () => { resetHandInput(); setFeedback(`<span class="muted">入力をリセットしました。</span>`); });
+$btnCommit.addEventListener("click", commitChord);
+document.getElementById("resetlink").addEventListener("click", () => {
+  if (confirm("進捗（クリア状況・苦手データ）をリセットしますか？")) {
+    state = { done: {}, weak: {} };
+    saveState(state);
+    renderNav();
+  }
+});
+
+/* ============ 早見表（用語 ⇄ 響き の接続し直し用リファレンス） ============ */
+const IV_ANCHORS = {
+  m2: "ジョーズのテーマ／すぐ隣の鍵盤",
+  M2: "「かえるのうた」の ド→レ",
+  m3: "救急車のサイレン「ピーポー」",
+  M3: "明るい「ド→ミ」",
+  P4: "結婚行進曲の出だし",
+  TT: "不気味。シンプソンズのテーマ",
+  P5: "「きらきら星」の ドド→ソソ",
+  m6: "切ない映画音楽の飛び方",
+  M6: "大きく明るく開く「ド→ラ」",
+  m7: "スター・トレックのテーマ",
+  M7: "あと半音でオクターブ。強い浮遊感",
+  P8: "「虹の彼方に」の出だし",
+};
+const IV_FROM_C = {
+  m2: "C→C#/D♭", M2: "C→D", m3: "C→D#/E♭", M3: "C→E", P4: "C→F", TT: "C→F#/G♭",
+  P5: "C→G", m6: "C→G#/A♭", M6: "C→A", m7: "C→A#/B♭", M7: "C→B", P8: "C→C（上）",
+};
+function refRow(cells, onPlay) {
+  const tr = document.createElement("tr");
+  for (const c of cells) {
+    const td = document.createElement("td");
+    if (c.cls) td.className = c.cls;
+    td.textContent = c.text;
+    tr.append(td);
+  }
+  const td = document.createElement("td");
+  const btn = document.createElement("button");
+  btn.className = "playbtn";
+  btn.textContent = "▶";
+  btn.addEventListener("click", onPlay);
+  td.append(btn);
+  tr.append(td);
+  return tr;
+}
+function refTable(headers, rows) {
+  const table = document.createElement("table");
+  const tr = document.createElement("tr");
+  for (const h of [...headers, ""]) {
+    const th = document.createElement("th");
+    th.textContent = h;
+    tr.append(th);
+  }
+  table.append(tr, ...rows);
+  return table;
+}
+(function buildRefSheet() {
+  const body = document.getElementById("refbody");
+  const sec = (title, el) => {
+    const h = document.createElement("h3");
+    h.textContent = title;
+    body.append(h, el);
+  };
+  sec("音程（2音の距離）", refTable(
+    ["名前", "半音", "Cから", "覚え方"],
+    T.INTERVALS.map(iv => refRow(
+      [{ text: iv.name }, { text: String(iv.semi), cls: "mono" }, { text: IV_FROM_C[iv.id], cls: "mono" }, { text: IV_ANCHORS[iv.id], cls: "dim" }],
+      () => { audio(); playNote(60, 0, 0.7); playNote(60 + iv.semi, 0.7, 0.7); playChord([60, 60 + iv.semi], 1.6, 1.0); }
+    ))
+  ));
+  sec("三和音（トライアド）", refTable(
+    ["名前", "記号", "Cでの構成音"],
+    T.TRIADS.map(t => refRow(
+      [{ text: t.name }, { text: "C" + t.sym, cls: "mono" }, { text: nameList(T.chordPcs(0, t.ivs)), cls: "mono" }],
+      () => { audio(); playChord(t.ivs.map(iv => 60 + iv), 0, 1.4); playSeq(t.ivs.map(iv => 60 + iv), 0.3, 0.5); }
+    ))
+  ));
+  sec("四和音（セブンス）", refTable(
+    ["名前", "記号", "Cでの構成音"],
+    T.SEVENTHS.map(t => refRow(
+      [{ text: t.name }, { text: "C" + t.sym, cls: "mono" }, { text: nameList(T.chordPcs(0, t.ivs)), cls: "mono" }],
+      () => { audio(); playChord(t.ivs.map(iv => 60 + iv), 0, 1.4); playSeq(t.ivs.map(iv => 60 + iv), 0.3, 0.5); }
+    ))
+  ));
+  sec("スケール／モード", refTable(
+    ["名前", "Cからの構成音"],
+    T.SCALES.map(s => refRow(
+      [{ text: s.name }, { text: nameList(T.chordPcs(0, s.ivs)), cls: "mono" }],
+      () => { audio(); playSeq([...s.ivs.map(iv => 60 + iv), 72], 0.32, 0.5); }
+    ))
+  ));
+})();
+const $refOverlay = document.getElementById("refoverlay");
+document.getElementById("btn-ref").addEventListener("click", () => $refOverlay.classList.add("open"));
+document.getElementById("refclose").addEventListener("click", () => $refOverlay.classList.remove("open"));
+$refOverlay.addEventListener("click", e => { if (e.target === $refOverlay) $refOverlay.classList.remove("open"); });
+window.addEventListener("keydown", e => { if (e.key === "Escape") $refOverlay.classList.remove("open"); });
+
+/* ============ 画面上の鍵盤（クリック演奏・MIDIフォールバック） ============ */
+const KB_LOW = 48, KB_HIGH = 72; // C3〜C5
+const BLACK_PCS = [1, 3, 6, 8, 10];
+const $kb = document.getElementById("keyboard");
+(function buildKeyboard() {
+  const whites = [];
+  for (let m = KB_LOW; m <= KB_HIGH; m++) if (!BLACK_PCS.includes(T.pc(m))) whites.push(m);
+  const w = 100 / whites.length;
+  whites.forEach((m, i) => {
+    const k = document.createElement("div");
+    k.className = "wkey";
+    k.style.left = (i * w) + "%";
+    k.style.width = w + "%";
+    k.dataset.midi = m;
+    if (T.pc(m) === 0) {
+      const lbl = document.createElement("div");
+      lbl.className = "lbl";
+      lbl.textContent = "C" + (Math.floor(m / 12) - 1);
+      k.append(lbl);
+    }
+    $kb.append(k);
+  });
+  for (let m = KB_LOW; m <= KB_HIGH; m++) {
+    if (!BLACK_PCS.includes(T.pc(m))) continue;
+    const wIdx = whites.filter(x => x < m).length; // 直前までの白鍵数
+    const k = document.createElement("div");
+    k.className = "bkey";
+    k.style.left = (wIdx * w - w * 0.32) + "%";
+    k.style.width = (w * 0.64) + "%";
+    k.dataset.midi = m;
+    $kb.append(k);
+  }
+})();
+function flashKey(midi) {
+  const el = $kb.querySelector(`[data-midi="${midi}"]`);
+  if (!el) return;
+  el.classList.add("lit");
+  setTimeout(() => el.classList.remove("lit"), 180);
+}
+function noteOn(midi, fromMidiDevice = false) {
+  audio();
+  playNote(midi, 0, 0.7);
+  flashKey(midi);
+  if (fromMidiDevice && session?.input) session.input.held.add(midi);
+  handleHandNote(midi);
+}
+$kb.addEventListener("pointerdown", e => {
+  const midi = e.target.closest("[data-midi]")?.dataset.midi;
+  if (midi != null) noteOn(Number(midi));
+});
+
+// PCキーボードでも演奏できる（A=C4〜K=C5）
+const KEYMAP = { a: 60, w: 61, s: 62, e: 63, d: 64, f: 65, t: 66, g: 67, y: 68, h: 69, u: 70, j: 71, k: 72 };
+window.addEventListener("keydown", e => {
+  if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+  const m = KEYMAP[e.key.toLowerCase()];
+  if (m != null) noteOn(m);
+});
+
+/* ============ Web MIDI ============ */
+const $chip = document.getElementById("midichip");
+function setMidiChip(names) {
+  if (names.length) {
+    $chip.textContent = "MIDI: " + names.join(", ");
+    $chip.classList.add("on");
+  } else {
+    $chip.textContent = "MIDI: 未接続（画面の鍵盤でOK）";
+    $chip.classList.remove("on");
+  }
+}
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess().then(access => {
+    const hook = () => {
+      const names = [];
+      for (const input of access.inputs.values()) {
+        names.push(input.name || "MIDI入力");
+        input.onmidimessage = msg => {
+          const [st, d1, d2] = msg.data;
+          const cmd = st & 0xf0;
+          if (cmd === 0x90 && d2 > 0) noteOn(d1, true);
+          else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) handleMidiOff(d1);
+        };
+      }
+      setMidiChip(names);
+    };
+    hook();
+    access.onstatechange = hook;
+  }).catch(() => setMidiChip([]));
+} else {
+  setMidiChip([]);
+}
+
+/* ============ 起動 ============ */
+renderNav();
+startLesson(ALL.find(l => !state.done[l.id]) ?? ALL[0]);
+</script>
+</body>
+</html>
