@@ -10,6 +10,15 @@
 
 **▶ その場で試す: https://npulsar-droid.github.io/ear-hand/**
 
+### 🔊 音つきデモ（13秒）
+
+このアプリの主役は「耳」レッスンなので、上のGIFでは肝心の音が伝わりません。
+実際の出題音（完全5度を順番に→同時に）から、鍵盤でEメジャーを弾いて採点されるまで:
+
+<video src="https://raw.githubusercontent.com/npulsar-droid/ear-hand/main/media/demo.mp4" controls muted width="800"></video>
+
+（再生できない場合は [media/demo.mp4](media/demo.mp4) から直接どうぞ）
+
 **単一HTMLファイル・依存ゼロ・ビルド不要。** ダウンロードしてダブルクリックでも動きます。
 
 全5章12レッスン（音程 → 三和音 → 四和音 → スケール/モード → コード進行）。
