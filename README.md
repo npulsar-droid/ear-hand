@@ -6,18 +6,16 @@
 音楽理論の本を読んでも和音が聴き取れるようにはならないし、
 コード表を眺めても指は動きません。そこを埋めるための練習台です。
 
-![Ear & Hand のデモ: D メジャーの構成音を鍵盤で1音ずつ押すと、3音そろった瞬間に採点される](media/demo.gif)
+[![Ear & Hand のデモ: D メジャーの構成音を鍵盤で1音ずつ押すと、3音そろった瞬間に採点される](media/demo.gif)](https://npulsar-droid.github.io/ear-hand/demo.html)
 
 **▶ その場で試す: https://npulsar-droid.github.io/ear-hand/**
 
-### 🔊 音つきデモ（13秒）
+### 🔊 音つきデモ（13秒・要音声）
 
 このアプリの主役は「耳」レッスンなので、上のGIFでは肝心の音が伝わりません。
 実際の出題音（完全5度を順番に→同時に）から、鍵盤でEメジャーを弾いて採点されるまで:
 
-<video src="https://raw.githubusercontent.com/npulsar-droid/ear-hand/main/media/demo.mp4" controls muted width="800"></video>
-
-（再生できない場合は [media/demo.mp4](media/demo.mp4) から直接どうぞ）
+**▶ https://npulsar-droid.github.io/ear-hand/demo.html**
 
 **単一HTMLファイル・依存ゼロ・ビルド不要。** ダウンロードしてダブルクリックでも動きます。
 

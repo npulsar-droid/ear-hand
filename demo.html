@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ear &amp; Hand — 音つきデモ</title>
+<style>
+  :root{ --bg:#0f131a; --panel:#161b24; --border:#232b38; --ink:#e8edf5; --dim:#8794a8; --accent:#5ba3f5; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;
+    display:flex;flex-direction:column;align-items:center;padding:32px 20px 48px;gap:18px}
+  h1{margin:0;font-size:20px}
+  p{margin:0;color:var(--dim);font-size:13.5px;line-height:1.8;max-width:820px;text-align:center}
+  video{width:min(1000px,100%);border:1px solid var(--border);border-radius:12px;background:#000;display:block}
+  .note{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:12px 16px;font-size:13px;color:var(--dim);max-width:820px;line-height:1.8}
+  .note b{color:var(--ink)}
+  a{color:var(--accent)}
+  .links{display:flex;gap:16px;font-size:14px;flex-wrap:wrap;justify-content:center}
+</style>
+</head>
+<body>
+  <h1>Ear &amp; Hand — 音つきデモ（13秒）</h1>
+  <p>再生ボタンを押してください。音が出ます。</p>
+  <video src="media/demo.mp4" controls playsinline preload="metadata" poster="media/poster.png"></video>
+  <div class="note">
+    前半は<b>耳レッスン</b>。「▶ 聴く」で2音が順番に鳴り、続けて同時に鳴ります（この回は<b>完全5度</b>）。
+    選択肢を押すと即採点。<br>
+    後半は<b>手レッスン</b>。「E（メジャー）を弾いてください」に対して、画面の鍵盤を1音ずつ押します。
+    3音そろった瞬間に自動採点されます。転回形でも正解です。
+  </div>
+  <div class="links">
+    <a href="index.html">▶ 実際に使ってみる</a>
+    <a href="https://github.com/npulsar-droid/ear-hand">GitHub リポジトリ</a>
+  </div>
+</body>
+</html>
