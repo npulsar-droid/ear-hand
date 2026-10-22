@@ -22,7 +22,7 @@
   body {
     background: var(--bg); color: var(--text);
     font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-    height: 100vh; display: flex; overflow: hidden;
+    height: 100vh; height: 100dvh; display: flex; overflow: hidden;
   }
 
   /* ---- sidebar ---- */
@@ -153,6 +153,27 @@
   }
   .wkey.lit { background: var(--accent); }
   .bkey.lit { background: var(--accent); }
+
+  /* ---- スマホ幅: サイドバーを上に積み、本体と鍵盤に横幅を渡す ---- */
+  @media (max-width: 720px) {
+    body { flex-direction: column; }
+    #sidebar {
+      width: 100%; min-width: 0; max-height: 26vh; padding: 10px 0;
+      border-right: none; border-bottom: 1px solid var(--border);
+    }
+    #sidebar .sub { padding-bottom: 8px; }
+    #progressbar { margin-bottom: 8px; }
+    #sidefoot { padding-top: 8px; }
+    #main { min-height: 0; }
+    #desc { padding: 12px 16px; max-height: 30%; }
+    #desc h2 { font-size: 16px; }
+    #quiz { padding: 12px 16px; }
+    #kbwrap { padding: 8px 12px 10px; }
+    #kbmeta { gap: 8px; }
+    #kbrange { white-space: nowrap; }
+    #keyboard { height: 96px; }
+  }
+  #keyboard { touch-action: manipulation; }
 </style>
 </head>
 <body>
@@ -365,8 +386,11 @@ function chordMidis(rootPc, ivs) { const r = rootMidiFor(rootPc); return ivs.map
 /* ============ 進捗（localStorage） ============ */
 const STORE_KEY = "ear-hand-v1";
 function loadState() {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY)) ?? { done: {}, weak: {} }; }
-  catch { return { done: {}, weak: {} }; }
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch { /* 壊れたデータは無視 */ }
+  // 想定外の形（{} や配列など）でも done/weak が必ずオブジェクトになるようにする
+  const obj = v => (v && typeof v === "object" && !Array.isArray(v)) ? v : {};
+  return { done: obj(s?.done), weak: obj(s?.weak) };
 }
 function saveState(s) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch { /* file:// 等で失敗しても続行 */ }
@@ -736,6 +760,8 @@ function startLesson(lesson) {
   session = { lesson, correct: 0, attempted: false, q: null, lastVariant: null, pendingRetry: [], sinceMiss: 0, judging: false, input: null };
   $desc.innerHTML = lesson.desc;
   renderNav();
+  // スマホ幅ではサイドバーが縦に短いので、選んだレッスンを見える位置へ
+  $nav.querySelector(".lesson.active")?.scrollIntoView({ block: "nearest" });
   nextQuestion();
 }
 
@@ -791,7 +817,10 @@ function renderQuestion() {
     else setFeedback(`<span class="muted">「▶ 聴く」を押して出題音を再生してください。</span>`);
   } else {
     renderHandState();
-    if (q.kind === "interval" && actx && actx.state === "running") q.play();
+    if (q.kind === "interval") {
+      if (actx && actx.state === "running") q.play();
+      else setFeedback(`<span class="muted">「▶ ルートを聴く」でルートの音を確認できます。</span>`);
+    }
     if (q.kind === "stages") renderStages();
     if (q.kind === "free251") renderFreeStages();
   }
